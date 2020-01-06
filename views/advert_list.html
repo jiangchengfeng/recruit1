@@ -42,43 +42,85 @@
                         <th>操作</th>
                     </tr>
                 </thead>
-                <tbody>
-                    {% for item in adverts %}
-                    <tr>
-                        <td>0</td>
-                        <td>{{item.title}}</td>
-                        <td>
-                            <img src="/public/uploads/{{item.image}}" style="width: 100px;height: 80px;" alt="">
-                        </td>
-                        <td>{{item.link}}</td>
-                        <td>{{item.start}}</td>
-                        <td>{{item.end}}</td>
-                        <td>1</td>
-                        <td>
-                            <a href="javascript:;" class="btn btn-info btn-xs">编辑</a>
-                            <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
+                <tbody id="tbody"></tbody>
             </table>
         </div>
         <!-- 分页 -->
-        <ul class="pagination pull-right">
-
-            <li><a href="/advert?page={{page-1}}">上一页</a></li>
-            {% for i in range(0,totalPage) -%}
-            {% if (i+1)=== page %}
-            <li class="active"><a href="/advert?page= {{i + 1}}">{{i + 1}}</a></li>
-            {% else %}
-            <li><a href="/advert?page= {{i + 1}}">{{i + 1}}</a></li>
-            {% endif %}
-            {%- endfor %}
-            <li><a href="/advert?page={{page+1}}">下一页</a></li>
+        <ul class="pagination pull-right" id="pagination">
         </ul>
     </div>
 </div>
+<script type="text/template" id="tpl">
+    <% adverts.forEach(function(item,index){ %>
+    <tr>
+        <td><%= index+1 %></td>
+        <td><%= item.title %></td>
+        <td>
+            <img src="/public/uploads/<%= item.image %>" style="width: 100px;height: 80px;" alt="">
+        </td>
+        <td><%= item.link %></td>
+        <td><%= item.start %></td>
+        <td><%= item.end %></td>
+        <td>1</td>
+        <td>
+            <a href="javascript:;" class="btn btn-info btn-xs">编辑</a>
+            <a href="javascript:;" class="btn btn-danger btn-xs">删除</a>
+        </td>
+    </tr>
+    <% }) %>
+    
+
+</script>
 {% endblock %}
 
 {% block script %}
+<script src="/node_modules/art-template/lib/template-web.js"></script>
+<script src="/node_modules/twbs-pagination/jquery.twbsPagination.js"></script>
+<script>
+    var pageSize = 5
+    $.ajax({
+        url: '/advert/count',
+        type: 'get',
+        success: function (data) {
+            if (data.err_code === 0) {
+                $('#pagination').twbsPagination({
+                    totalPages: Math.ceil(data.result / pageSize),
+                    visiblePages: pageSize,
+                    first: '第一页',
+                    prev: '上一页',
+                    next: '下一页',
+                    last: '最后一页',
+                    onPageClick: function (event, page) {
+                        // $('#page-content').text('Page ' + page);
+                        // window.alert(page)
+                        // 当点击页码要执行的回调函数 发起一个ajax
+                        loadData(page)
+                    }
+                })
+            }
+        }
+    })
+
+    function loadData(page) {
+        $.ajax({
+            url: '/advert/list',
+            type: 'get',
+            data: {
+                page,
+                pageSize
+            },
+            dataType: 'json',
+            success: function (data) {
+                // console.log(data);
+                if (data.err_code === 0) {
+                    var htmlStr = template('tpl', {
+                        adverts: data.result
+                    })
+                    $('#tbody').html(htmlStr)
+                }
+            }
+        })
+    }
+
+</script>
 {% endblock %}

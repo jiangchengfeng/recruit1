@@ -6,14 +6,14 @@ import { basename } from 'path'
 
 const router = express.Router()
 
-router.get('/advert/count',(req,res,next)=>{
-  Advert.count((err,count)=>{
-    if(err){
+router.get('/advert/count', (req, res, next) => {
+  Advert.count((err, count) => {
+    if (err) {
       return next(err)
     }
     res.json({
-      err_code:0,
-      result:count
+      err_code: 0,
+      result: count
     })
   })
 })
@@ -84,20 +84,20 @@ router.post('/advert/add', (req, res, next) => {
 
 
 router.get('/advert/list', (req, res, next) => {
-  let { page,pageSize } = req.query
+  let { page, pageSize } = req.query
   page = Number.parseInt(page)
   pageSize = Number.parseInt(pageSize)
   Advert
     .find()
-    .skip((page-1)*pageSize)
+    .skip((page - 1) * pageSize)
     .limit(pageSize)
-    .exec((err,adverts)=>{
-      if(err){
+    .exec((err, adverts) => {
+      if (err) {
         return next(err)
       }
       res.json({
-        err_code:0,
-        result:adverts
+        err_code: 0,
+        result: adverts
       })
     })
 })
@@ -108,31 +108,46 @@ router.get('/advert/one/:advertId', (req, res) => {
     if (err) {
       return next(err)
     }
-    res.json({
-      err_code: 0,
+    // res.json({
+    //   err_code: 0,
+    //   result: result
+    // })
+    // console.log(result);
+    res.render('advert_edit.html', {
       result: result
     })
+
   })
+
 })
 
 router.post('/advert/edit', (req, res, next) => {
-  Advert.findById(req.body.id, (err, advert) => {
+  const form = new Formidable();
+  form.uploadDir = config.uploadDir // 配置formidable 文件上传接收路径
+  form.keepExtensions = true; // 配置保存文件原始的扩展名
+  form.parse(req, (err, fields, files) => {
     if (err) {
       return next(err)
     }
-    const body = req.body
-    advert.title = body.title
-    advert.image = body.image
-    advert.link = body.link
-    advert.start = body.start
-    advert.end = body.end
-    advert.last = Date.now()
-    advert.save((err, result) => {
+    const body = fields
+    body.image = basename(files.image.path)
+    Advert.findById(body.id, (err, advert) => {
       if (err) {
         return next(err)
       }
-      res.json({
-        err_code: 0,
+      advert.title = body.title
+      advert.image = body.image
+      advert.link = body.link
+      advert.start = body.start
+      advert.end = body.end
+      advert.last = Date.now()
+      advert.save((err, result) => {
+        if (err) {
+          return next(err)
+        }
+        res.json({
+          err_code: 0,
+        })
       })
     })
   })
@@ -143,9 +158,11 @@ router.get('/advert/remove/:advertId', (req, res, next) => {
     if (err) {
       return next(err)
     }
-    res.json({
-      err_code: 0
-    })
+    // res.json({
+    //   err_code: 0
+    // })
+    // res.render('advert_list.html')
+    res.redirect('/advert')
   })
 })
 
